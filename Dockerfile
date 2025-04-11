@@ -5,7 +5,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
 # Proje dosyalarını kopyalarız
-COPY . .
+COPY . . 
 
 # .NET projemizi build ederiz
 RUN dotnet publish BaeglAI.API/BaeglAI.API.csproj -c Release -o /app/publish
@@ -16,10 +16,10 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 
 # Dışarıdan gelen isteklerin yönlendirileceği portu açarız
-EXPOSE 80
+EXPOSE 8080
 
 # Publish edilen dosyaları kopyalarız
-COPY --from=build /app/publish .
+COPY --from=build /app/publish . 
 
 # Uygulamayı çalıştıran komut
 ENTRYPOINT ["dotnet", "BaeglAI.API.dll"]

@@ -1,5 +1,5 @@
 # Temel image (Docker Hub) seçilir
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 # Çalışma dizinini belirleriz
 WORKDIR /app
@@ -11,7 +11,7 @@ COPY . .
 RUN dotnet publish BaeglAI.API/BaeglAI.API.csproj -c Release -o /app/publish
 
 # Uygulamanın çalışacağı son image'ı belirleriz
-FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 
 WORKDIR /app
 

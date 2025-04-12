@@ -28,7 +28,12 @@ public class CustomerOrderCollectorService : ICustomerOrderCollectorService
 
         var json = await response.Content.ReadAsStringAsync();
         var root = JsonDocument.Parse(json).RootElement;
-        var structured = root.GetProperty("analysis").GetProperty("structuredData");
+
+        if (!root.TryGetProperty("analysis", out var analysis) ||
+            !analysis.TryGetProperty("structuredData", out var structured))
+        {
+            throw new Exception("structuredData bulunamadı.");
+        }
 
         string? phone = null;
 
@@ -53,42 +58,58 @@ public class CustomerOrderCollectorService : ICustomerOrderCollectorService
             phone = $"test-{Guid.NewGuid()}";
         }
 
-        var items = new List<OrderItem>();
-        foreach (var item in structured.GetProperty("items").EnumerateArray())
+var items = new List<OrderItem>();
+if (structured.TryGetProperty("items", out var itemsProp))
+{
+    foreach (var item in itemsProp.EnumerateArray())
+    {
+        items.Add(new OrderItem
         {
-            items.Add(new OrderItem
-            {
-                Name = item.GetProperty("name").GetString(),
-                Quantity = item.GetProperty("quantity").GetInt32(),
-                UnitPrice = (double)(item.TryGetProperty("unitPrice", out var priceProp)
-                    ? priceProp.GetDecimalOrDefault()
-                    : 0m)
-            });
-        }
+            Name = item.TryGetProperty("name", out var itemNameProp) ? itemNameProp.GetString() ?? "" : "",
+            Quantity = item.TryGetProperty("quantity", out var qtyProp) ? qtyProp.GetInt32() : 1,
+            UnitPrice = (double)(item.TryGetProperty("unitPrice", out var priceProp)
+                ? priceProp.GetDecimalOrDefault()
+                : 0m)
+        });
+    }
+}
 
         var customer = new Customer
         {
             CustomerId = phone,
             PhoneNumber = phone,
-            FirstName = structured.GetProperty("customerName").GetStringOrNull() ?? "Unknown",
+            FirstName = structured.TryGetProperty("customerName", out var nameProp)
+                ? nameProp.GetString() ?? "Unknown"
+                : "Unknown",
             LastName = "",
             CreatedAt = DateTime.UtcNow,
-            Notes = structured.GetProperty("transcript").GetStringOrNull(),
+            Notes = structured.TryGetProperty("transcript", out var transcriptProp)
+                ? transcriptProp.GetString()
+                : null,
             IsTemporary = false
         };
 
         var order = new Order
         {
-            OrderId = root.GetProperty("id").GetString(),
+            OrderId = root.TryGetProperty("id", out var idProp)
+                ? idProp.GetString() ?? Guid.NewGuid().ToString()
+                : Guid.NewGuid().ToString(),
+
             CustomerId = phone,
             CustomerName = customer.FirstName,
             PhoneNumber = phone,
             Items = items,
-            TotalPrice = structured.GetProperty("totalPrice").GetDecimalOrDefault(),
+            TotalPrice = structured.TryGetProperty("totalPrice", out var totalPriceProp)
+                ? totalPriceProp.GetDecimalOrDefault()
+                : 0m,
             Note = customer.Notes,
-            OrderDate = root.GetProperty("startedAt").GetDateTimeOrDefault(),
+            OrderDate = root.TryGetProperty("startedAt", out var dateProp)
+                ? dateProp.GetDateTimeOrDefault()
+                : DateTime.UtcNow,
             Status = (int)OrderStatus.Pending,
-            RecordingUrl = root.GetProperty("recordingUrl").GetStringOrNull()
+            RecordingUrl = root.TryGetProperty("recordingUrl", out var recordingProp)
+                ? recordingProp.GetString()
+                : null
         };
 
         var orderSuccess = await _orderRepository.UpdateAsync(_storeId, order.OrderId, order);

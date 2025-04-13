@@ -110,6 +110,34 @@ public class CustomerIntroController : ControllerBase
         return "+" + new string(phone.Where(char.IsDigit).ToArray());
     }
 
+    // [HttpPost]
+    // public async Task<IActionResult> GetCustomerName([FromBody] VapiToolRequest request)
+    // {
+    //     if (string.IsNullOrWhiteSpace(request?.Arguments?.customerPhone))
+    //         return BadRequest(new { message = "customerPhone is required." });
+
+    //     var normalizedPhone = NormalizePhone(request.Arguments.customerPhone);
+    //     var storeId = _config["Vapi:DefaultStoreId"];
+
+    //     var customers = await _customerRepository.GetWhereAsync(storeId, x => x.PhoneNumber == normalizedPhone);
+    //     var customer = customers.FirstOrDefault();
+
+    //     return Ok(new
+    //     {
+    //         results = new[]
+    //         {
+    //             new
+    //             {
+    //                 toolCallId = request.toolCallId,
+    //                 result = new
+    //                 {
+    //                     customerName = customer?.FirstName ?? "Unknown"
+    //                 }
+    //             }
+    //         }
+    //     });
+    // }
+
     [HttpPost]
     public async Task<IActionResult> GetCustomerName([FromBody] VapiToolRequest request)
     {
@@ -122,6 +150,8 @@ public class CustomerIntroController : ControllerBase
         var customers = await _customerRepository.GetWhereAsync(storeId, x => x.PhoneNumber == normalizedPhone);
         var customer = customers.FirstOrDefault();
 
+        var name = customer?.FirstName ?? "Unknown";
+
         return Ok(new
         {
             results = new[]
@@ -129,14 +159,12 @@ public class CustomerIntroController : ControllerBase
                 new
                 {
                     toolCallId = request.toolCallId,
-                    result = new
-                    {
-                        customerName = customer?.FirstName ?? "Unknown"
-                    }
+                    result = name // 🔥 Dikkat: sadece string dönüyoruz
                 }
             }
         });
     }
+
 }
 
 /// <summary>

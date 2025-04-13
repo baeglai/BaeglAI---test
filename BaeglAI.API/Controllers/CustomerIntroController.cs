@@ -40,7 +40,7 @@ public class CustomerIntroController : ControllerBase
     }
 
 [HttpPost]
-[Route("api/CustomerIntro")]
+[Route("api/[controller]")]
 public async Task<IActionResult> GetCustomerName([FromBody] VapiToolRequest request)
 {
     if (string.IsNullOrWhiteSpace(request?.Arguments?.customerPhone))

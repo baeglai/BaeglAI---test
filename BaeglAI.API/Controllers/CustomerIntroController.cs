@@ -199,10 +199,16 @@ public class VapiMessage
 
 public class VapiToolCall
 {
+    [JsonPropertyName("id")]
     public string id { get; set; }
+
+    [JsonPropertyName("name")]
     public string name { get; set; }
+
+    [JsonPropertyName("arguments")]
     public Dictionary<string, string> arguments { get; set; }
 }
+
 
 // /// <summary>
 // /// DTO

@@ -141,6 +141,10 @@ public class CustomerIntroController : ControllerBase
 [HttpPost]
 public async Task<IActionResult> GetCustomerName([FromBody] VapiMessageWrapper request)
 {
+    // 🔐 VAPI sadece tool-calls için bu endpoint'i çağırmalı
+    if (request?.message?.type != "tool-calls")
+        return Ok(); // Status update, end-of-call-report gibi istekleri sessizce geç
+
     var toolCall = request.message?.toolCallList?.FirstOrDefault();
 
     if (toolCall == null)
@@ -148,7 +152,7 @@ public async Task<IActionResult> GetCustomerName([FromBody] VapiMessageWrapper r
 
     var arguments = toolCall.arguments;
 
-    // VAPI bazen "arguments.customerPhone", bazen "arguments_customerPhone" şeklinde yollar
+    // 📦 caller.phoneNumber bazen farklı key isimleriyle gelir
     arguments.TryGetValue("customerPhone", out var phoneFromDotNotation);
     arguments.TryGetValue("arguments_customerPhone", out var phoneFromFlatKey);
 
@@ -163,7 +167,12 @@ public async Task<IActionResult> GetCustomerName([FromBody] VapiMessageWrapper r
     var customers = await _customerRepository.GetWhereAsync(storeId, x => x.PhoneNumber == normalizedPhone);
     var customer = customers.FirstOrDefault();
 
-    var name = customer?.FirstName ?? "Unknown";
+    var name = customer?.FirstName;
+
+    // 🧠 Eğer isim bulunamazsa null dön → VAPI bunu doğru şekilde yorumlar
+    var result = name != null
+        ? new { customerName = name }
+        : null;
 
     return Ok(new
     {
@@ -172,7 +181,7 @@ public async Task<IActionResult> GetCustomerName([FromBody] VapiMessageWrapper r
             new
             {
                 toolCallId = toolCall.id,
-                result = new { customerName = name }
+                result = result
             }
         }
     });
@@ -181,7 +190,6 @@ public async Task<IActionResult> GetCustomerName([FromBody] VapiMessageWrapper r
 
 
 }
-
 
 public class VapiMessageWrapper
 {

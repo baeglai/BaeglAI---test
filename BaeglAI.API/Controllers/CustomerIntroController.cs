@@ -193,13 +193,23 @@ public class VapiMessage
 
 public class VapiToolCall
 {
-    [JsonPropertyName("id")]
     public string id { get; set; }
 
-    [JsonPropertyName("name")]
-    public string name { get; set; }
+    [JsonIgnore]
+    public string name => function?.name;
 
-    [JsonPropertyName("arguments")]
+    [JsonIgnore]
+    public Dictionary<string, string> arguments => function?.arguments;
+
+    [JsonPropertyName("function")]
+    public VapiToolFunction function { get; set; }
+
+    public string type { get; set; }
+}
+
+public class VapiToolFunction
+{
+    public string name { get; set; }
     public Dictionary<string, string> arguments { get; set; }
 }
 

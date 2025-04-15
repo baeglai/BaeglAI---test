@@ -150,7 +150,12 @@ public async Task<IActionResult> GetCustomerName([FromBody] VapiMessageWrapper r
 
     var arguments = toolCall.arguments;
 
-    if (!arguments.TryGetValue("customerPhone", out var customerPhone) || string.IsNullOrWhiteSpace(customerPhone))
+    // camelCase ve snake_case ikisini de kontrol et
+    if (
+        !arguments.TryGetValue("customerPhone", out var customerPhone) &&
+        !arguments.TryGetValue("customer_phone", out customerPhone) ||
+        string.IsNullOrWhiteSpace(customerPhone)
+    )
         return BadRequest(new { message = "customerPhone is required." });
 
     var normalizedPhone = NormalizePhone(customerPhone);

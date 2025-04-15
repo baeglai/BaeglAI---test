@@ -142,7 +142,7 @@ public class CustomerIntroController : ControllerBase
 public async Task<IActionResult> GetCustomerName([FromBody] VapiMessageWrapper request)
 {
     if (request?.message?.type != "tool-calls" || request.message.toolCallList == null)
-        return Ok(); // VAPI'nin status-update, end-of-call-report gibi şeyleri olabilir
+        return Ok(); // Diğer mesaj türlerini (end-of-call, status-update vs) sessizce geç
 
     var toolCall = request.message.toolCallList.FirstOrDefault();
     if (toolCall == null)
@@ -150,12 +150,7 @@ public async Task<IActionResult> GetCustomerName([FromBody] VapiMessageWrapper r
 
     var arguments = toolCall.arguments;
 
-    arguments.TryGetValue("customerPhone", out var phoneFromDotNotation);
-    arguments.TryGetValue("arguments_customerPhone", out var phoneFromFlatKey);
-
-    var customerPhone = phoneFromDotNotation ?? phoneFromFlatKey;
-
-    if (string.IsNullOrWhiteSpace(customerPhone))
+    if (!arguments.TryGetValue("customerPhone", out var customerPhone) || string.IsNullOrWhiteSpace(customerPhone))
         return BadRequest(new { message = "customerPhone is required." });
 
     var normalizedPhone = NormalizePhone(customerPhone);
@@ -165,7 +160,6 @@ public async Task<IActionResult> GetCustomerName([FromBody] VapiMessageWrapper r
     var customer = customers.FirstOrDefault();
 
     var name = customer?.FirstName;
-
     var result = name != null ? new { customerName = name } : null;
 
     return Ok(new
